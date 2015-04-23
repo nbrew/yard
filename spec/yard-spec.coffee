@@ -1,5 +1,10 @@
 Yard = require '../lib/yard'
 
+# Use the command `window:run-package-specs` (cmd-alt-ctrl-p) to run specs.
+#
+# To run a specific `it` or `describe` block add an `f` to the front (e.g. `fit`
+# or `fdescribe`). Remove the `f` to unfocus the block.
+
 describe "Yard", ->
   [workspaceElement, activationPromise, editor, buffer] = []
 
@@ -13,63 +18,63 @@ describe "Yard", ->
         buffer = editor.buffer
 
   describe "when the yard:create event is triggered", ->
-    describe "for single line method", ->
-      beforeEach ->
-        editor.insertText """
-          class UndocumentedClass
-            def undocumented_method(param1, param2=3)
-              'The method is not documented!'
-            end
+    it "writes a default multiline YARD doc", ->
+      waitsForPromise ->
+        activationPromise
+
+      editor.insertText """class UndocumentedClass
+          def undocumented_multiline_method(param1, param2 = 3, opts = {})
+            'Not documented!'
+            'Noot documented!'
+            'Noooot documented!!!'
           end
+        end
+      """
+      editor.getLastCursor().setBufferPosition([2,0])
+      atom.commands.dispatch workspaceElement, 'yard:create'
 
-        """
-        editor.getLastCursor().setBufferPosition([2,0])
-        atom.commands.dispatch workspaceElement, 'yard:create'
-
-      it "writes a default YARD doc", ->
-        expected_output = """class UndocumentedClass
-                               # Description of method
-                               #
-                               # @param [Type] param1 describe param1
-                               # @param [Type] param2=3 describe param2=3
-                               # @return [Type] description of returned object
-                               def undocumented_method(param1, param2=3)
-                                 'The method is not documented!'
-                               end
+      expected_output = """class UndocumentedClass
+                             # Description of method
+                             #
+                             # @param [Type] param1 describe param1
+                             # @param [Type] param2 = 3 describe param2 = 3
+                             # @param [Type] opts = {} describe opts = {}
+                             # @return [Type] description of returned object
+                             def undocumented_multiline_method(param1, param2 = 3, opts = {})
+                               'Not documented!'
+                               'Noot documented!'
+                               'Noooot documented!!!'
                              end
-                             """
-        output = buffer.getText()
-        expect(output).toContain(expected_output)
+                           end
+                           """
+      output = buffer.getText()
+      expect(output).toContain(expected_output)
 
-    describe "for multiline method", ->
-      beforeEach ->
-        editor.insertText """
-          class UndocumentedClass
-            def undocumented_multiline_method(param1, param2 = 3, opts = {})
-              'Not documented!'
-              'Noot documented!'
-              'Noooot documented!!!'
-            end
+    it "with single line method writes a default YARD doc", ->
+      waitsForPromise ->
+        activationPromise
+
+      editor.insertText """
+        class UndocumentedClass
+          def undocumented_method(param1, param2=3)
+            'The method is not documented!'
           end
+        end
 
-        """
-        editor.getLastCursor().setBufferPosition([4,0])
-        atom.commands.dispatch workspaceElement, 'yard:create'
+      """
+      editor.getLastCursor().setBufferPosition([2,0])
+      atom.commands.dispatch workspaceElement, 'yard:create'
 
-      it "writes a default YARD doc", ->
-        expected_output = """class UndocumentedClass
-                               # Description of method
-                               #
-                               # @param [Type] param1 describe param1
-                               # @param [Type] param2 = 3 describe param2 = 3
-                               # @param [Type] opts = {} describe opts = {}
-                               # @return [Type] description of returned object
-                               def undocumented_multiline_method(param1, param2 = 3, opts = {})
-                                 'Not documented!'
-                                 'Noot documented!'
-                                 'Noooot documented!!!'
-                               end
+      expected_output = """class UndocumentedClass
+                             # Description of method
+                             #
+                             # @param [Type] param1 describe param1
+                             # @param [Type] param2=3 describe param2=3
+                             # @return [Type] description of returned object
+                             def undocumented_method(param1, param2=3)
+                               'The method is not documented!'
                              end
-                             """
-        output = buffer.getText()
-        expect(output).toContain(expected_output)
+                           end
+                           """
+      output = buffer.getText()
+      expect(output).toContain(expected_output)
