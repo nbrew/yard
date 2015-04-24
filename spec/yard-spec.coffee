@@ -139,64 +139,65 @@ describe "Yard", ->
 
 
   describe "when the yard:doc-attr event is triggered", ->
-    beforeEach ->
-      waitsForPromise ->
-        activationPromise
+    describe "for single attribute per line", ->
+      beforeEach ->
+        waitsForPromise ->
+          activationPromise
 
-      editor.insertText """class UndocumentedClass
-                             attr_reader :count
-                           end
-                           """
-      editor.getLastCursor().setBufferPosition([1,0])
-      atom.commands.dispatch workspaceElement, 'yard:doc-attr'
+        editor.insertText """class UndocumentedClass
+                               attr_reader :count
+                             end
+                             """
+        editor.getLastCursor().setBufferPosition([1,0])
+        atom.commands.dispatch workspaceElement, 'yard:doc-attr'
+      it "writes @return tag for attribute", ->
+        expected_output = """
+          class UndocumentedClass
+            # @return [Type] description of returned object
+            attr_reader :count
+          end
+          """
+        output = buffer.getText()
+        expect(output).toContain(expected_output)
 
-    it "writes @return tag for attribute", ->
-      expected_output = """
-        class UndocumentedClass
-          # @return [Type] description of returned object
-          attr_reader :count
-        end
-        """
-      output = buffer.getText()
-      expect(output).toContain(expected_output)
-
-  describe "for a class with writeable attribute", ->
-    beforeEach ->
-      waitsForPromise ->
-        activationPromise
-      editor.insertText """class UndocumentedClass
-                             attr_writer :name
-                           end
-                           """
-      editor.getLastCursor().setBufferPosition([1,0])
-      atom.commands.dispatch workspaceElement, 'yard:doc-attr'
+    describe "for a class with writeable attribute", ->
+      beforeEach ->
+        waitsForPromise ->
+          activationPromise
+        editor.insertText """class UndocumentedClass
+                               attr_writer :name
+                             end
+                             """
+        editor.getLastCursor().setBufferPosition([1,0])
+        atom.commands.dispatch workspaceElement, 'yard:doc-attr'
 
 
-    it "writes attribute doc string", ->
-      expected_output = """class UndocumentedClass
-                             # @return [Type] description of returned object
-                             attr_writer :name
-                           end
-                           """
-      output = buffer.getText()
-      expect(output).toContain(expected_output)
+      it "writes attribute doc string", ->
+        expected_output = """class UndocumentedClass
+                               # @return [Type] description of returned object
+                               attr_writer :name
+                             end
+                             """
+        output = buffer.getText()
+        expect(output).toContain(expected_output)
 
-  describe "with attr accessor", ->
-    beforeEach ->
-      waitsForPromise ->
-        activationPromise
-      editor.insertText """class UndocumentedClass
-                             attr_accessor :name
-                           end
-                           """
-      editor.getLastCursor().setBufferPosition([1,0])
-      atom.commands.dispatch workspaceElement, 'yard:doc-attr'
 
-    it "writes accessor attribute doc string", ->
-      expected_output = """class UndocumentedClass
-                             # @return [Type] description of returned object
-                             attr_accessor :name
-                           end
-                           """
-      output = buffer.getText()
-      expect(output).toContain(expected_output)
+    describe "with attr accessor", ->
+      beforeEach ->
+        waitsForPromise ->
+          activationPromise
+        editor.insertText """class UndocumentedClass
+                               attr_accessor :name
+                             end
+                             """
+        editor.getLastCursor().setBufferPosition([1,0])
+        atom.commands.dispatch workspaceElement, 'yard:doc-attr'
+
+      it "writes accessor attribute doc string", ->
+        expected_output = """class UndocumentedClass
+                               # @return [Type] description of returned object
+                               attr_accessor :name
+                             end
+                             """
+        output = buffer.getText()
+        expect(output).toContain(expected_output)
