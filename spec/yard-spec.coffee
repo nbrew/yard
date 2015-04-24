@@ -160,33 +160,42 @@ describe "Yard", ->
       output = buffer.getText()
       expect(output).toContain(expected_output)
 
-  xdescribe "multi-line class with writeable attribute", ->
-    it "writes class and attribute doc string", ->
+  describe "for a class with writeable attribute", ->
+    beforeEach ->
+      waitsForPromise ->
+        activationPromise
       editor.insertText """class UndocumentedClass
                              attr_writer :name
                            end
                            """
-      expected_output = """# Description of class
-                           class UndocumentedClass
-                             # @!attribute [w] name
-                             #   @return [Type] description of returned object
-                             attr_reader :name
+      editor.getLastCursor().setBufferPosition([1,0])
+      atom.commands.dispatch workspaceElement, 'yard:doc-attr'
+
+
+    it "writes attribute doc string", ->
+      expected_output = """class UndocumentedClass
+                             # @return [Type] description of returned object
+                             attr_writer :name
                            end
                            """
       output = buffer.getText()
       expect(output).toContain(expected_output)
 
-  xdescribe "with attr accessor", ->
-    it "writes accessor attribute and class doc string", ->
+  describe "with attr accessor", ->
+    beforeEach ->
+      waitsForPromise ->
+        activationPromise
       editor.insertText """class UndocumentedClass
                              attr_accessor :name
                            end
                            """
-      expected_output = """# Description of class
-                           class UndocumentedClass
-                             # @!attribute name
-                             #   @return [Type] description of returned object
-                             attr_reader :name
+      editor.getLastCursor().setBufferPosition([1,0])
+      atom.commands.dispatch workspaceElement, 'yard:doc-attr'
+
+    it "writes accessor attribute doc string", ->
+      expected_output = """class UndocumentedClass
+                             # @return [Type] description of returned object
+                             attr_accessor :name
                            end
                            """
       output = buffer.getText()
