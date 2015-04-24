@@ -150,10 +150,10 @@ describe "Yard", ->
       editor.getLastCursor().setBufferPosition([1,0])
       atom.commands.dispatch workspaceElement, 'yard:doc-attr'
 
-    it "writes @return tag and class description", ->
+    it "writes @return tag for attribute", ->
       expected_output = """
         class UndocumentedClass
-          # @return [Type] count
+          # @return [Type] description of returned object
           attr_reader :count
         end
         """

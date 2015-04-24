@@ -12,7 +12,7 @@ module.exports = Yard =
         @docClass()
 
       'yard:doc-attr': =>
-        @docClass()
+        @docAttr()
 
   create: ->
     editor = atom.workspace.getActivePaneItem()
@@ -31,7 +31,9 @@ module.exports = Yard =
 
   documentAttribute: (editor, cursor) ->
     editor.transact =>
+      attrRow = @findAttrRow(editor, cursor)
       snippetString = @buildAttrString()
+      @insertSnippet(editor, cursor, attrRow, snippetString)
 
   documentClass: (editor, cursor) ->
     editor.transact =>
@@ -47,15 +49,17 @@ module.exports = Yard =
       @insertSnippet(editor, cursor, prevDefRow, snippet_string)
 
   findDefStartRow: (editor, cursor) ->
-    row = cursor.getBufferRow()
-    while (editor.buffer.lines[row].indexOf('def ') == -1)
-      break if row == 0
-      row -= 1
-    row
+    @findPatternInRow('def ', editor, cursor)
 
   findClassRow: (editor, cursor) ->
+    @findPatternInRow('class ', editor, cursor)
+
+  findAttrRow: (editor, cursor) ->
+    @findPatternInRow('attr_', editor, cursor)
+
+  findPatternInRow: (pattern, editor, cursor) ->
     row = cursor.getBufferRow()
-    while (editor.buffer.lines[row].indexOf('class ') == -1)
+    while (editor.buffer.lines[row].indexOf(pattern) == -1)
       break if row == 0
       row -= 1
     row
@@ -84,11 +88,8 @@ module.exports = Yard =
     params_string = methodLine.substring(opened_bracket + 1, closed_bracket)
     params_string.split(',').map((m) -> m.trim())
 
-  buildAttrString: (attributes) ->
-    snippet_string = ""
-    for attr in attributes
-      snippet_string += "\n" if snippet_string.length > 0
-      snippet_string += "\n# @return [Type] a description of attribute"
+  buildAttrString: ->
+    snippet_string = @returnSnippet()
     snippet_string
 
   buildClassString: ->
