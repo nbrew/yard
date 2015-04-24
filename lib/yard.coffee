@@ -2,21 +2,52 @@
 Snippets = require atom.packages.resolvePackagePath('snippets') + '/lib/snippets.js'
 
 module.exports = Yard =
+
   activate: (state) ->
-    atom.commands.add 'atom-workspace', "yard:create", => @create()
+    atom.commands.add 'atom-workspace',
+      'yard:create': =>
+        @create()
+
+      'yard:doc-class': =>
+        @docClass()
+
+      'yard:doc-attr': =>
+        @docClass()
 
   create: ->
+    console.log("Create")
     editor = atom.workspace.getActivePaneItem()
     cursor = editor.getLastCursor()
+    @documentMethod(editor, cursor)
+
+  docClass: ->
+    editor = atom.workspace.getActivePaneItem()
+    cursor = editor.getLastCursor()
+    @documentClass(editor, cursor)
+
+  documentClass: (editor, cursor) ->
     editor.transact =>
-      prevDefRow = @findStartRow(editor, cursor)
+      prevClassRow = @findClassRow(editor, cursor)
+      snippetString = @buildClassString()
+      @insertSnippet(editor, cursor, prevClassRow, snippetString)
+
+  documentMethod: (editor, cursor) ->
+    editor.transact =>
+      prevDefRow = @findDefStartRow(editor, cursor)
       params = @parseMethodLine(editor.lineTextForBufferRow(prevDefRow))
       snippet_string = @buildSnippetString(params)
       @insertSnippet(editor, cursor, prevDefRow, snippet_string)
 
-  findStartRow: (editor, cursor) ->
+  findDefStartRow: (editor, cursor) ->
     row = cursor.getBufferRow()
     while (editor.buffer.lines[row].indexOf('def ') == -1)
+      break if row == 0
+      row -= 1
+    row
+
+  findClassRow: (editor, cursor) ->
+    row = cursor.getBufferRow()
+    while (editor.buffer.lines[row].indexOf('class ') == -1)
       break if row == 0
       row -= 1
     row
@@ -44,3 +75,18 @@ module.exports = Yard =
     return [] if opened_bracket == -1 and closed_bracket == -1
     params_string = methodLine.substring(opened_bracket + 1, closed_bracket)
     params_string.split(',').map((m) -> m.trim())
+
+  buildClassString: ->
+    snippet_string = "##\n# ${1:Description of class}"
+    snippet_string
+
+  parseAttributes: (editor, cursor) ->
+    row = cursor.getBufferRow()
+    attribute_lines = []
+    while (editor.buffer.lines[row].indexOf('attr_') == -1)
+      break if row == 0
+      row
+    return []
+
+  returnSnippet: ->
+    "# @return [Type] description of returned object"
