@@ -15,7 +15,6 @@ module.exports = Yard =
         @docClass()
 
   create: ->
-    console.log("Create")
     editor = atom.workspace.getActivePaneItem()
     cursor = editor.getLastCursor()
     @documentMethod(editor, cursor)
@@ -24,6 +23,15 @@ module.exports = Yard =
     editor = atom.workspace.getActivePaneItem()
     cursor = editor.getLastCursor()
     @documentClass(editor, cursor)
+
+  docAttr: ->
+    editor = atom.workspace.getActivePaneItem()
+    cursor = editor.getLastCursor()
+    @documentAttribute(editor, cursor)
+
+  documentAttribute: (editor, cursor) ->
+    editor.transact =>
+      snippetString = @buildAttrString()
 
   documentClass: (editor, cursor) ->
     editor.transact =>
@@ -75,6 +83,13 @@ module.exports = Yard =
     return [] if opened_bracket == -1 and closed_bracket == -1
     params_string = methodLine.substring(opened_bracket + 1, closed_bracket)
     params_string.split(',').map((m) -> m.trim())
+
+  buildAttrString: (attributes) ->
+    snippet_string = ""
+    for attr in attributes
+      snippet_string += "\n" if snippet_string.length > 0
+      snippet_string += "\n# @return [Type] a description of attribute"
+    snippet_string
 
   buildClassString: ->
     snippet_string = "##\n# ${1:Description of class}"
