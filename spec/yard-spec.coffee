@@ -201,3 +201,30 @@ describe "Yard", ->
                              """
         output = buffer.getText()
         expect(output).toContain(expected_output)
+
+  describe "when the yard:doc-context is triggered", ->
+    beforeEach ->
+      waitsForPromise ->
+        activationPromise
+      editor.insertText """class UndocumentedClass
+
+                              def stuff
+                              end
+                            end
+                            """
+      editor.getLastCursor().setBufferPosition([1,0])
+      # this should use the atom-text-editor context, not the workspace
+      # FIXME When cursor is on the empty line below a class definition documentClass is not called
+      atom.commands.dispatch workspaceElement, 'yard:doc-context'
+
+    it "writes the class doc string", ->
+      expected_output = """##
+        # Description of class
+        class UndocumentedClass
+
+          def stuff
+          end
+        end
+        """
+      output = buffer.getText()
+      expect(output).toContain(expected_output)

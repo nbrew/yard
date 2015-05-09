@@ -3,31 +3,30 @@ Snippets = require atom.packages.resolvePackagePath('snippets') + '/lib/snippets
 
 module.exports = Yard =
 
+  methodPattern: 'def '
+  classPattern: 'class '
+  attrPattern: 'attr_'
+
+  editor: null
+  cursor: null
+
   activate: (state) ->
-    atom.commands.add 'atom-workspace',
-      'yard:create': =>
-        @create()
-
-      'yard:doc-class': =>
-        @docClass()
-
-      'yard:doc-attr': =>
-        @docAttr()
+    atom.commands.add 'atom-workspace', 'yard:create': => @create()
+    atom.commands.add 'atom-workspace', 'yard:doc-class': => @docClass()
+    atom.commands.add 'atom-workspace', 'yard:doc-attr': => @docAttr()
+    atom.commands.add 'atom-text-editor', 'yard:doc-context': => @docFromContext()
 
   create: ->
-    editor = atom.workspace.getActivePaneItem()
-    cursor = editor.getLastCursor()
-    @documentMethod(editor, cursor)
+    @setEditorAndCursor()
+    @documentMethod(@editor, @cursor)
 
   docClass: ->
-    editor = atom.workspace.getActivePaneItem()
-    cursor = editor.getLastCursor()
-    @documentClass(editor, cursor)
+    @setEditorAndCursor()
+    @documentClass(@editor, @cursor)
 
   docAttr: ->
-    editor = atom.workspace.getActivePaneItem()
-    cursor = editor.getLastCursor()
-    @documentAttribute(editor, cursor)
+    @setEditorAndCursor()
+    @documentAttribute(@editor, @cursor)
 
   documentAttribute: (editor, cursor) ->
     editor.transact =>
@@ -48,14 +47,28 @@ module.exports = Yard =
       snippet_string = @buildSnippetString(params)
       @insertSnippet(editor, cursor, prevDefRow, snippet_string)
 
+  docFromContext: ->
+    @setEditorAndCursor()
+    row = @cursor.getBufferRow()
+    line = @editor.buffer.lines[row]
+    if (line.indexOf(@methodPattern) > -1)
+      @documentMethod(@editor, @cursor)
+    else if (line.indexOf(@classPattern) > -1)
+      @documentClass(@editor, @cursor)
+    else if (line.indexOf(@attrPattern) > -1)
+      @documentAttribute(@editor, @cursor)
+    else
+      @documentMethod(@editor, @cursor)
+
+
   findDefStartRow: (editor, cursor) ->
-    @findPatternInRow('def ', editor, cursor)
+    @findPatternInRow(@methodPattern, editor, cursor)
 
   findClassRow: (editor, cursor) ->
-    @findPatternInRow('class ', editor, cursor)
+    @findPatternInRow(@classPattern, editor, cursor)
 
   findAttrRow: (editor, cursor) ->
-    @findPatternInRow('attr_', editor, cursor)
+    @findPatternInRow(@attrPattern, editor, cursor)
 
   findPatternInRow: (pattern, editor, cursor) ->
     row = cursor.getBufferRow()
@@ -106,3 +119,7 @@ module.exports = Yard =
 
   returnSnippet: ->
     "# @return [Type] description of returned object"
+
+  setEditorAndCursor: ->
+    @editor = atom.workspace.getActivePaneItem()
+    @cursor = @editor.getLastCursor()
