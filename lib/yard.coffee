@@ -14,11 +14,11 @@ module.exports = Yard =
     atom.commands.add 'atom-workspace', 'yard:create': => @create()
     atom.commands.add 'atom-workspace', 'yard:doc-class': => @docClass()
     atom.commands.add 'atom-workspace', 'yard:doc-attr': => @docAttr()
-    atom.commands.add 'atom-text-editor', 'yard:doc-context': => @docFromContext()
+    atom.commands.add 'atom-workspace', 'yard:doc-context': => @docFromContext()
 
   create: ->
     @setEditorAndCursor()
-    @documentMethod(@editor, @cursor)
+    @documentFunction(@editor, @cursor)
 
   docClass: ->
     @setEditorAndCursor()
@@ -40,26 +40,25 @@ module.exports = Yard =
       snippetString = @buildClassString()
       @insertSnippet(editor, cursor, prevClassRow, snippetString)
 
-  documentMethod: (editor, cursor) ->
+  documentFunction: (editor, cursor) ->
     editor.transact =>
       prevDefRow = @findDefStartRow(editor, cursor)
       params = @parseMethodLine(editor.lineTextForBufferRow(prevDefRow))
-      snippet_string = @buildSnippetString(params)
-      @insertSnippet(editor, cursor, prevDefRow, snippet_string)
+      snippetString = @buildFunctionSnippetString(params)
+      @insertSnippet(editor, cursor, prevDefRow, snippetString)
 
   docFromContext: ->
     @setEditorAndCursor()
     row = @cursor.getBufferRow()
-    line = @editor.buffer.lines[row]
-    if (line.indexOf(@methodPattern) > -1)
-      @documentMethod(@editor, @cursor)
-    else if (line.indexOf(@classPattern) > -1)
+    if @isFunctionDef(@editor, row)
+      @documentFunction(@editor, @cursor)
+    else if @isClassDef(@editor, row)
       @documentClass(@editor, @cursor)
-    else if (line.indexOf(@attrPattern) > -1)
+    else if @isAttributeDef(@editor, row)
       @documentAttribute(@editor, @cursor)
     else
-      @documentMethod(@editor, @cursor)
-
+      # hunt for next matched function or class
+      @documentFunction(@editor, @cursor)
 
   findDefStartRow: (editor, cursor) ->
     @findPatternInRow(@methodPattern, editor, cursor)
@@ -77,22 +76,22 @@ module.exports = Yard =
       row -= 1
     row
 
-  insertSnippet: (editor, cursor, prevDefRow, snippet_string) ->
+  insertSnippet: (editor, cursor, prevDefRow, snippetString) ->
     cursor.setBufferPosition([prevDefRow,0])
     editor.moveToFirstCharacterOfLine()
     indentation = cursor.getIndentLevel()
     editor.insertNewlineAbove()
     editor.setIndentationForBufferRow(cursor.getBufferRow(), indentation)
-    Snippets.insert(snippet_string)
+    Snippets.insert(snippetString)
 
-  buildSnippetString: (params) ->
-    snippet_string = "# ${1:Description of method}\n#\n"
+  buildFunctionSnippetString: (params) ->
+    snippetString = "# ${1:Description of method}\n#\n"
     index = 2
     for param in params
-      snippet_string += "# @param [${#{index}:Type}] #{param} ${#{index + 1}:describe #{param}}\n"
+      snippetString += "# @param [${#{index}:Type}] #{param} ${#{index + 1}:describe #{param}}\n"
       index += 2
-    snippet_string += "# @return [${#{index}:Type}] ${#{index + 1}:description of returned object}"
-    snippet_string
+    snippetString += "# @return [${#{index}:Type}] ${#{index + 1}:description of returned object}"
+    snippetString
 
   parseMethodLine: (methodLine) ->
     opened_bracket = methodLine.indexOf("(")
@@ -102,24 +101,40 @@ module.exports = Yard =
     params_string.split(',').map((m) -> m.trim())
 
   buildAttrString: ->
-    snippet_string = @returnSnippet()
-    snippet_string
+    @returnSnippet()
 
   buildClassString: ->
-    snippet_string = "##\n# ${1:Description of class}"
-    snippet_string
-
-  parseAttributes: (editor, cursor) ->
-    row = cursor.getBufferRow()
-    attribute_lines = []
-    while (editor.buffer.lines[row].indexOf('attr_') == -1)
-      break if row == 0
-      row
-    return []
+    "##\n# ${1:Description of class}"
 
   returnSnippet: ->
     "# @return [Type] description of returned object"
 
-  setEditorAndCursor: ->
-    @editor = atom.workspace.getActivePaneItem()
+  isFunctionDef: (editor, n) ->
+    line = @readLine(editor, n)
+    (line.indexOf(@methodPattern) > -1)
+
+  isClassDef: (editor, n) ->
+    line = @readLine(editor, n)
+    (line.indexOf(@classPattern) > -1)
+
+  isAttributeDef: (editor, n) ->
+    line = @readLine(editor, n)
+    (line.indexOf(@attrPattern) > -1)
+
+  getEditor: ->
+    # @editor = atom.workspace.getActivePaneItem()
+    @editor = atom.workspace.getActiveEditor()
+    return @editor
+
+  getCursor: ->
+    @getEditor() unless @editor
     @cursor = @editor.getLastCursor()
+
+  setEditorAndCursor: ->
+    @getEditor()
+    @getCursor()
+
+  readLine: (editor, n) ->
+    editor = @getEditor() unless editor?
+    return editor.getCursor()?.getCurrentBufferLine() unless n?
+    editor.lineForBufferRow(n)
