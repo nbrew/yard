@@ -107,7 +107,7 @@ module.exports = Yard =
     "##\n# ${1:Description of class}"
 
   returnSnippet: ->
-    "# @return [Type] description of returned object"
+    "# @return [${1:Type}] ${2:description of returned object}"
 
   isFunctionDef: (editor, n) ->
     line = @readLine(editor, n)
