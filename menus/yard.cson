@@ -3,17 +3,12 @@
   'atom-workspace': [
     label: 'Yard'
     submenu: [
-      {label: 'Create', command: 'yard:create'}
-      {label: 'Document', command: 'yard:doc-context'}
+      {label: 'Create', command: 'yard:doc-context'}
     ]
   ]
   'atom-text-editor': [
-    # {
-    #   'label': 'Create YARD'
-    #   'command': 'yard:create'
-    # }
     {
-      'label': 'Document'
+      'label': 'Create'
       'command': 'yard:doc-context'
     }
 
@@ -26,7 +21,7 @@
         'label': 'yard'
         'submenu': [
           {
-          'label': 'Document'
+          'label': 'Create'
           'command': 'yard:doc-context'
           }
         ]
