@@ -16,7 +16,7 @@ module.exports = Yard =
 
   findStartRow: (editor, cursor) ->
     row = cursor.getBufferRow()
-    while (editor.buffer.lines[row].indexOf('def ') == -1)
+    while (editor.buffer.lineForRow(row).indexOf('def ') == -1)
       break if row == 0
       row -= 1
     row
